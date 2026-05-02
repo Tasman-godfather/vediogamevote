@@ -149,6 +149,13 @@
       font-weight: 800;
     }
 
+    .btn:disabled,
+    .vote-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+
     main {
       padding: 34px 0 72px;
     }
@@ -574,6 +581,67 @@
       justify-content: flex-end;
     }
 
+    .leaderboard {
+      margin-top: 18px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .leaderboard h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .leader-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .leader-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 42px;
+    }
+
+    .leader-name {
+      min-width: 0;
+      color: #f2eadf;
+      font-weight: 800;
+    }
+
+    .leader-track {
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .leader-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--teal), var(--amber));
+      transition: width 0.3s ease;
+    }
+
+    .leader-count {
+      color: var(--amber);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .leader-status {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .investment-link {
       margin: 26px auto 0;
       display: grid;
@@ -755,6 +823,11 @@
         flex: 1 1 160px;
       }
 
+      .leader-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
       .investment-link {
         grid-template-columns: 72px 1fr;
       }
@@ -870,9 +943,16 @@
       </div>
       <div class="result-actions">
         <button class="btn btn-primary" type="button" id="copyBtn">复制我的选择</button>
+        <button class="btn btn-primary" type="button" id="submitVoteBtn">提交投票</button>
         <a class="btn" href="investment.html">投资通道</a>
         <button class="btn" type="button" id="clearBtn">清空</button>
       </div>
+    </section>
+
+    <section class="wrap leaderboard" aria-live="polite">
+      <h2>实时投票排行榜</h2>
+      <div class="leader-list" id="leaderList"></div>
+      <div class="leader-status" id="leaderStatus">投票数据库配置后，将在这里显示实时票数。</div>
     </section>
 
     <section class="wrap investment-link" aria-label="投资通道入口">
@@ -900,10 +980,19 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <footer>
-    <div class="wrap">原创互动影游方向投票页。页面为静态版本，真实票数汇总可接问卷、表单或后端接口。</div>
+    <div class="wrap">原创互动影游方向投票页。投票数据由 Supabase 匿名收集，排行榜只显示汇总票数。</div>
   </footer>
 
   <script>
+    const SUPABASE_URL = "";
+    const SUPABASE_ANON_KEY = "";
+    const SUPABASE_READY = Boolean(
+      SUPABASE_URL &&
+      SUPABASE_ANON_KEY &&
+      !SUPABASE_URL.includes("YOUR_") &&
+      !SUPABASE_ANON_KEY.includes("YOUR_")
+    );
+
     const stories = [
       {
         id: "heir",
@@ -1078,9 +1167,13 @@
     const modalPitch = document.querySelector("#modalPitch");
     const modalHook = document.querySelector("#modalHook");
     const modalList = document.querySelector("#modalList");
+    const submitVoteBtn = document.querySelector("#submitVoteBtn");
+    const leaderListEl = document.querySelector("#leaderList");
+    const leaderStatusEl = document.querySelector("#leaderStatus");
     const saved = JSON.parse(localStorage.getItem("interactiveFilmPicks") || "[]");
     const selected = new Set(saved.filter((id) => stories.some((story) => story.id === id)));
     let activeFilter = "全部";
+    let voteCounts = {};
 
     function renderCards() {
       cardsEl.innerHTML = "";
@@ -1125,6 +1218,7 @@
       const picks = stories.filter((story) => selected.has(story.id));
       countEl.textContent = picks.length;
       localStorage.setItem("interactiveFilmPicks", JSON.stringify(picks.map((story) => story.id)));
+      submitVoteBtn.disabled = !picks.length || !SUPABASE_READY;
 
       if (!picks.length) {
         resultTitleEl.textContent = "还没选剧本";
@@ -1147,6 +1241,119 @@
         ? picks[0].hook
         : "这几个最有真人互动影游的代入感和讨论度。";
       return `我最想玩：${names}。理由：${reason}`;
+    }
+
+    function supabaseUrl(path) {
+      return `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`;
+    }
+
+    async function supabaseRequest(path, options = {}) {
+      const response = await fetch(supabaseUrl(path), {
+        ...options,
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Supabase request failed: ${response.status}`);
+      }
+
+      if (response.status === 204) {
+        return null;
+      }
+
+      return response.json();
+    }
+
+    function renderLeaderboard() {
+      const rows = stories
+        .map((story) => ({
+          ...story,
+          count: Number(voteCounts[story.id] || 0)
+        }))
+        .sort((a, b) => b.count - a.count || stories.indexOf(a) - stories.indexOf(b))
+        .slice(0, 10);
+      const max = Math.max(1, ...rows.map((row) => row.count));
+
+      leaderListEl.innerHTML = rows.map((story, index) => `
+        <div class="leader-row">
+          <div>
+            <div class="leader-name">No.${index + 1} 《${story.title}》</div>
+            <div class="leader-track"><div class="leader-bar" style="width:${Math.round((story.count / max) * 100)}%"></div></div>
+          </div>
+          <div class="leader-count">${story.count} 票</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadVoteCounts() {
+      renderLeaderboard();
+
+      if (!SUPABASE_READY) {
+        leaderStatusEl.textContent = "Supabase 尚未配置，投票按钮会在配置 Project URL 和 anon key 后启用。";
+        submitVoteBtn.disabled = true;
+        return;
+      }
+
+      try {
+        const rows = await supabaseRequest("vote_counts?select=story_id,vote_count");
+        voteCounts = Object.fromEntries(rows.map((row) => [row.story_id, row.vote_count]));
+        renderLeaderboard();
+        leaderStatusEl.textContent = "排行榜数据已同步。";
+      } catch (error) {
+        leaderStatusEl.textContent = "排行榜暂时读取失败，请稍后刷新。";
+        console.error(error);
+      }
+    }
+
+    async function submitVote() {
+      const storyIds = [...selected];
+
+      if (!storyIds.length) {
+        showToast("请先选择 1 到 3 个剧本");
+        return;
+      }
+
+      if (!SUPABASE_READY) {
+        showToast("投票数据库还没配置");
+        return;
+      }
+
+      const localVoteKey = `submittedVote:${storyIds.slice().sort().join(",")}`;
+      if (localStorage.getItem(localVoteKey)) {
+        showToast("这组选择已经提交过了");
+        return;
+      }
+
+      submitVoteBtn.disabled = true;
+      submitVoteBtn.textContent = "提交中...";
+
+      try {
+        await supabaseRequest("votes", {
+          method: "POST",
+          headers: {
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify({
+            story_ids: storyIds
+          })
+        });
+
+        localStorage.setItem(localVoteKey, "1");
+        showToast("投票已提交，谢谢你的选择");
+        await loadVoteCounts();
+      } catch (error) {
+        showToast("提交失败，请稍后再试");
+        console.error(error);
+      } finally {
+        submitVoteBtn.textContent = "提交投票";
+        submitVoteBtn.disabled = !selected.size || !SUPABASE_READY;
+      }
     }
 
     function toggleStory(id) {
@@ -1199,6 +1406,8 @@
       }
     });
 
+    submitVoteBtn.addEventListener("click", submitVote);
+
     document.querySelector("#clearBtn").addEventListener("click", () => {
       selected.clear();
       renderCards();
@@ -1231,6 +1440,7 @@
 
     renderCards();
     updateResult();
+    loadVoteCounts();
   </script>
 </body>
 </html>
