@@ -1,0 +1,10 @@
+# Local verification artifacts
+dom-check.html
+preview-*.png
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

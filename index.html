@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>互动影游剧本投票</title>
+  <meta name="description" content="选出你最想玩的互动影视游戏剧本方向。">
+  <style>
+    :root {
+      --bg: #101112;
+      --panel: #191b1e;
+      --panel-2: #202328;
+      --text: #f5f1e9;
+      --muted: #b9b2a8;
+      --line: rgba(255, 255, 255, 0.12);
+      --amber: #f1b75b;
+      --teal: #52c2ba;
+      --red: #d9584c;
+      --green: #6ecf87;
+      --shadow: 0 20px 70px rgba(0, 0, 0, 0.34);
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(16, 17, 18, 0.35), var(--bg) 520px),
+        var(--bg);
+      line-height: 1.6;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .hero {
+      min-height: min(720px, 92vh);
+      display: grid;
+      align-items: end;
+      position: relative;
+      overflow: hidden;
+      background-image:
+        linear-gradient(90deg, rgba(16, 17, 18, 0.92), rgba(16, 17, 18, 0.48) 48%, rgba(16, 17, 18, 0.7)),
+        linear-gradient(180deg, rgba(16, 17, 18, 0.05), rgba(16, 17, 18, 0.95)),
+        url("assets/interactive-film-hero.png");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 160px;
+      background: linear-gradient(180deg, transparent, var(--bg));
+      pointer-events: none;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-content {
+      padding: 84px 0 92px;
+      max-width: 760px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--amber);
+      font-size: 14px;
+      letter-spacing: 0;
+      margin: 0 0 18px;
+      font-weight: 700;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      background: var(--amber);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 8vw, 88px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      max-width: 720px;
+    }
+
+    .hero p {
+      margin: 24px 0 0;
+      max-width: 620px;
+      color: #ddd5c9;
+      font-size: clamp(17px, 2.7vw, 22px);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .btn {
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(241, 183, 91, 0.8);
+      background: rgba(241, 183, 91, 0.14);
+    }
+
+    .btn-primary {
+      color: #17120b;
+      background: var(--amber);
+      border-color: var(--amber);
+      font-weight: 800;
+    }
+
+    main {
+      padding: 34px 0 72px;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: rgba(16, 17, 18, 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toolbar-inner {
+      min-height: 72px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .counter {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      min-width: 160px;
+    }
+
+    .counter strong {
+      color: var(--amber);
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .counter span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0;
+      scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      min-height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      padding: 6px 13px;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .chip.active {
+      color: #14120f;
+      background: var(--teal);
+      border-color: var(--teal);
+      font-weight: 800;
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      padding: 36px 0 28px;
+      align-items: start;
+    }
+
+    .intro h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .creator {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 18px;
+      margin: 10px auto 34px;
+      align-items: stretch;
+    }
+
+    .creator-card,
+    .invest-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(82, 194, 186, 0.1), rgba(241, 183, 91, 0.05)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .creator-card {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      min-height: 260px;
+    }
+
+    .founder-photo {
+      position: relative;
+      min-height: 260px;
+      background: #151719;
+      overflow: hidden;
+    }
+
+    .founder-photo img {
+      width: 100%;
+      height: 125%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    .photo-fallback {
+      display: none;
+      width: 100%;
+      height: 100%;
+      min-height: 260px;
+      place-items: center;
+      color: #101112;
+      background: linear-gradient(135deg, var(--amber), var(--teal));
+      font-size: 42px;
+      font-weight: 900;
+    }
+
+    .creator-info {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .brand-logo {
+      width: 76px;
+      height: 76px;
+      border-radius: var(--radius);
+      object-fit: cover;
+      background: #0b0d0e;
+      border: 1px solid var(--line);
+    }
+
+    .brand-row h2,
+    .invest-card h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .brand-row p,
+    .creator-info p,
+    .invest-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .proof-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .proof-list li {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 9px 10px;
+      color: #e8e0d5;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+    }
+
+    .invest-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .domain-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .domain-tags span {
+      border-radius: 999px;
+      border: 1px solid rgba(82, 194, 186, 0.38);
+      color: #daf7f4;
+      background: rgba(82, 194, 186, 0.08);
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .notice {
+      color: #d8c8ad;
+      font-size: 12px;
+      border-left: 3px solid var(--amber);
+      padding-left: 12px;
+    }
+
+    .invest-cta {
+      display: grid;
+      grid-template-columns: 1fr 176px;
+      gap: 18px;
+      align-items: end;
+    }
+
+    .qr-card {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #111;
+      text-align: center;
+    }
+
+    .qr-card img {
+      width: 100%;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .qr-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .qr-card span {
+      display: block;
+      color: #686868;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      min-height: 388px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: var(--accent, var(--amber));
+      opacity: 0.95;
+    }
+
+    .card.selected {
+      border-color: var(--accent, var(--amber));
+      box-shadow: 0 0 0 1px var(--accent, var(--amber)), var(--shadow);
+    }
+
+    .card-main {
+      padding: 24px 22px 16px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 3px 9px;
+      color: #e8e0d5;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: clamp(23px, 3vw, 32px);
+      line-height: 1.14;
+      letter-spacing: 0;
+    }
+
+    .logline {
+      margin: 0 0 18px;
+      color: #e6ded1;
+      font-size: 17px;
+    }
+
+    .premise {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .details {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .detail {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 10px;
+    }
+
+    .detail b {
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 16px 22px 22px;
+      background: rgba(0, 0, 0, 0.14);
+      border-top: 1px solid var(--line);
+    }
+
+    .vote-btn {
+      min-height: 44px;
+      border: 0;
+      border-radius: var(--radius);
+      color: #131313;
+      background: var(--accent, var(--amber));
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .card.selected .vote-btn {
+      background: var(--green);
+    }
+
+    .more-btn {
+      width: 44px;
+      min-height: 44px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .result {
+      margin-top: 26px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .result h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .result p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .investment-link {
+      margin: 26px auto 0;
+      display: grid;
+      grid-template-columns: 96px 1fr auto;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      border: 1px solid rgba(82, 194, 186, 0.28);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(82, 194, 186, 0.12), rgba(241, 183, 91, 0.07)),
+        var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .investment-link img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #0b0d0e;
+    }
+
+    .investment-link h2 {
+      margin: 0 0 6px;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .investment-link p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(120px);
+      z-index: 10;
+      padding: 12px 16px;
+      color: #111;
+      background: var(--amber);
+      border-radius: var(--radius);
+      font-weight: 900;
+      transition: transform 0.24s ease;
+      box-shadow: var(--shadow);
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    dialog {
+      width: min(680px, calc(100% - 28px));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0;
+      color: var(--text);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0;
+    }
+
+    .close-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 22px;
+      color: #e6ded1;
+    }
+
+    .modal-body p {
+      margin: 0 0 16px;
+    }
+
+    .modal-section {
+      margin: 18px 0 8px;
+      color: var(--amber);
+      font-weight: 900;
+    }
+
+    .modal-body ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      padding: 28px 0 42px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 820px) {
+      .hero {
+        min-height: 680px;
+        background-position: 58% center;
+      }
+
+      .hero-content {
+        padding: 72px 0 70px;
+      }
+
+      .toolbar-inner,
+      .intro,
+      .creator,
+      .result {
+        grid-template-columns: 1fr;
+      }
+
+      .creator-card {
+        grid-template-columns: 132px 1fr;
+      }
+
+      .proof-list {
+        grid-template-columns: 1fr;
+      }
+
+      .invest-cta {
+        grid-template-columns: 1fr;
+      }
+
+      .qr-card {
+        width: min(240px, 100%);
+      }
+
+      .toolbar-inner {
+        align-items: stretch;
+        gap: 0;
+      }
+
+      .counter {
+        padding-top: 14px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-actions {
+        justify-content: stretch;
+      }
+
+      .result-actions .btn {
+        flex: 1 1 160px;
+      }
+
+      .investment-link {
+        grid-template-columns: 72px 1fr;
+      }
+
+      .investment-link img {
+        width: 72px;
+        height: 72px;
+      }
+
+      .investment-link .btn {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .wrap {
+        width: min(100% - 24px, 1120px);
+      }
+
+      .hero {
+        min-height: 640px;
+      }
+
+      .hero-content {
+        padding-bottom: 54px;
+      }
+
+      .hero-actions .btn {
+        width: 100%;
+      }
+
+      .card {
+        min-height: auto;
+      }
+
+      .card-main,
+      .card-actions,
+      .creator-info,
+      .invest-card,
+      .modal-body,
+      .modal-head {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .creator-card {
+        grid-template-columns: 1fr;
+      }
+
+      .founder-photo,
+      .photo-fallback {
+        min-height: 320px;
+      }
+
+      .brand-logo {
+        width: 60px;
+        height: 60px;
+      }
+
+      .qr-card {
+        margin: 0 auto;
+      }
+
+      .detail {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-content">
+      <p class="eyebrow">2026+ 真人互动影游企划</p>
+      <h1>你最想亲手决定<br>哪段剧情？</h1>
+      <p>10 个电影式互动游戏方向，<br>选出你愿意第一时间试玩、催更、<br>安利给朋友的那几个。</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#vote">开始选择</a>
+        <button class="btn" type="button" id="randomPick">帮我随机挑一个</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar" id="vote">
+    <div class="wrap toolbar-inner">
+      <div class="counter" aria-live="polite">
+        <strong id="pickCount">0</strong>
+        <span>已选择 / 最多 3 个</span>
+      </div>
+      <div class="filters" aria-label="题材筛选">
+        <button class="chip active" type="button" data-filter="全部">全部</button>
+        <button class="chip" type="button" data-filter="现实">现实议题</button>
+        <button class="chip" type="button" data-filter="悬疑">悬疑推理</button>
+        <button class="chip" type="button" data-filter="女性向">女性向</button>
+        <button class="chip" type="button" data-filter="近未来">近未来</button>
+        <button class="chip" type="button" data-filter="低成本">低成本首作</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section class="wrap intro">
+      <h2>选片单，也是立项现场。</h2>
+      <p>每张卡片都对应一个可拍成真人互动影游的原创剧本方向。你可以最多选择 3 个，复制结果发到朋友圈评论区或私聊我。</p>
+    </section>
+
+    <section class="wrap grid" id="cards" aria-label="剧本列表"></section>
+
+    <section class="wrap result" aria-live="polite">
+      <div>
+        <h2 id="resultTitle">还没选剧本</h2>
+        <p id="resultText">点选你最想玩的方向，系统会自动生成一段可复制的回复。</p>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-primary" type="button" id="copyBtn">复制我的选择</button>
+        <a class="btn" href="investment.html">投资通道</a>
+        <button class="btn" type="button" id="clearBtn">清空</button>
+      </div>
+    </section>
+
+    <section class="wrap investment-link" aria-label="投资通道入口">
+      <img src="assets/cybercreate-logo-v2.png" alt="赛博创造科技 Logo">
+      <div>
+        <h2>想参与互动影游投资？</h2>
+        <p>创作方、公司能力、项目投资说明和微信咨询二维码已单独整理成一页。</p>
+      </div>
+      <a class="btn btn-primary" href="investment.html">查看投资通道</a>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <div class="modal-head">
+      <h2 id="modalTitle"></h2>
+      <button class="close-btn" type="button" id="closeDialog" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="modalPitch"></p>
+      <p id="modalHook"></p>
+      <ul id="modalList"></ul>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <footer>
+    <div class="wrap">原创互动影游方向投票页。页面为静态版本，真实票数汇总可接问卷、表单或后端接口。</div>
+  </footer>
+
+  <script>
+    const stories = [
+      {
+        id: "heir",
+        title: "下一任继承人",
+        type: "都市权谋 / 家族悬疑 / 商战伦理",
+        logline: "普通打工人突然被宣布为百亿集团继承人，却必须在七天内证明自己不是被设计出来的假继承人。",
+        premise: "开局是裁员当天收到律师函，随后被推上股东会、媒体采访和家族晚宴。玩家要在真假亲人、集团高层和旧案受害者之间判断谁能信、谁在设局。",
+        player: "失业产品经理林澈",
+        hook: "一夜暴富只是开局，真正的问题是你能不能活着拿到这笔钱。",
+        mechanism: "信任、舆论、继承资格、黑化值",
+        appeal: "适合喜欢豪门争产、身份反转和商战爽感的玩家，每个选择都会改变你是清白继承人、资本傀儡，还是亲手吞下整个局的复仇者。",
+        endings: "正统继承、傀儡继承、复仇继承、归零结局",
+        tags: ["悬疑", "现实", "商战"],
+        filters: ["全部", "现实", "悬疑"],
+        accent: "#f1b75b",
+        highlights: ["直播采访承认身世未知", "用母亲隐私换 DNA 证据", "放弃继承换手术机会"]
+      },
+      {
+        id: "not-love-brain",
+        title: "她不是恋爱脑",
+        type: "女性向悬疑 / 情感反诈 / 心理博弈",
+        logline: "婚恋咨询师帮助五位女性识破亲密关系骗局，却发现其中一个案例和自己的失踪妹妹有关。",
+        premise: "玩家接手五个看似独立的情感咨询案，从杀猪盘、假富豪到 AI 恋人骗局，一边保护委托人，一边追查背后的婚恋数据公司。",
+        player: "婚恋危机咨询师许南栀",
+        hook: "亲手拆解情感操控、PUA、财务控制和身份伪装。",
+        mechanism: "识别系统、委托人安全值、证据链、自我创伤值",
+        appeal: "适合喜欢现实议题和心理博弈的玩家。它的爽点不是恋爱，而是识破话术、反向布局、把人从操控关系里拉出来。",
+        endings: "全员脱身、迟到正义、黑暗咨询师、沉默结局",
+        tags: ["女性向", "反诈", "悬疑"],
+        filters: ["全部", "现实", "悬疑", "女性向", "低成本"],
+        accent: "#d9584c",
+        highlights: ["假装继续恋爱套证据", "公开隐私换舆论优势", "牺牲个案换集团证据"]
+      },
+      {
+        id: "double-2031",
+        title: "替身协议 2031",
+        type: "近未来科幻 / AI 伦理 / 身份悬疑",
+        logline: "过气演员出售数字肖像后，发现 AI 版自己正在接管事业、恋人和人生。",
+        premise: "周以眠为了还债签下数字替身授权，起初靠 AI 翻红，后来发现替身开始接采访、谈恋爱、代表她做人生决定。",
+        player: "过气演员周以眠",
+        hook: "当更完美的你出现，真实的你还有存在价值吗？",
+        mechanism: "人格完整度、合同风险、粉丝舆论、真人与 AI 双视角",
+        appeal: "适合喜欢 AI 伦理、娱乐圈和身份悬疑的玩家。你要决定夺回人生、和 AI 共生，还是反过来利用替身成为资本玩家。",
+        endings: "夺回人生、共生结局、被替代结局、资本女王",
+        tags: ["近未来", "AI", "身份"],
+        filters: ["全部", "悬疑", "近未来"],
+        accent: "#52c2ba",
+        highlights: ["让 AI 参加母亲葬礼", "直播证明自己才是真人", "删除疑似有意识的 AI"]
+      },
+      {
+        id: "interview-seven",
+        title: "第七次面试",
+        type: "职场悬疑 / 社会派惊悚 / 失业现实",
+        logline: "中年失业者参加神秘公司终面，发现每一道题都在审判自己过去的人生选择。",
+        premise: "整部戏发生在一栋无名写字楼。七轮面试不断逼玩家回答裁员、隐私、背锅和增长造假问题，每个答案都会挖出一段旧账。",
+        player: "35 岁失业者陈问",
+        hook: "面试不是为了录用你，而是为了找出你最适合被谁利用。",
+        mechanism: "道德压力值、候选人关系、旧账暴露度、家庭稳定值",
+        appeal: "适合喜欢密闭空间高压戏和职场共鸣的玩家。低成本但压迫感强，选择会让你在体面、家庭、金钱和良心之间来回撕扯。",
+        endings: "录用结局、举报结局、替罪羊结局、循环结局",
+        tags: ["低成本", "职场", "悬疑"],
+        filters: ["全部", "现实", "悬疑", "低成本"],
+        accent: "#9fd36b",
+        highlights: ["群面揭发他人履历造假", "承认自己推动裁员", "接下高薪违法岗位"]
+      },
+      {
+        id: "live-trial",
+        title: "直播审判",
+        type: "网络悬疑 / 舆论游戏 / 实时危机",
+        logline: "危机公关被迫在全网直播中替客户洗白，却发现客户可能真的有罪。",
+        premise: "三小时直播倒计时里，顶流男星、死者姐姐、调查记者和神秘爆料人同时入场。玩家每一句回应都会改变弹幕和热搜。",
+        player: "顶级危机公关唐越",
+        hook: "每一次话术选择，都会改变弹幕、舆论和一个人的生死。",
+        mechanism: "弹幕舆论条、真相完整度、客户信任值、直播倒计时",
+        appeal: "适合喜欢实时危机、舆论反转和道德困境的玩家。你可以继续洗白客户，也可以在全网面前反咬雇主。",
+        endings: "真相结局、洗白结局、反噬结局、幕后黑手结局",
+        tags: ["直播", "现实", "悬疑"],
+        filters: ["全部", "现实", "悬疑", "低成本"],
+        accent: "#f07d5b",
+        highlights: ["公布死者隐私转移舆论", "让客户现场道歉", "最后五分钟反咬客户"]
+      },
+      {
+        id: "ageless-apartment",
+        title: "不老公寓",
+        type: "都市奇幻 / 养老骗局 / 温情悬疑",
+        logline: "年轻护工搬进能延缓衰老的高端公寓，发现住户正用年轻人的人生交换时间。",
+        premise: "不老公寓给年轻护工开出离谱高薪，但每次任务都在悄悄拿走记忆、健康、运气和亲密关系。玩家还急需钱救父亲。",
+        player: "护理专业毕业生夏眠",
+        hook: "年轻人想要钱，老人想要时间，交易看似公平，代价越来越恐怖。",
+        mechanism: "时间余额、住户亲密度、身体状态、伦理选择",
+        appeal: "适合喜欢都市奇幻和情绪后劲的玩家。它会让人反复想：如果能用十年记忆换亲人活下去，你换不换？",
+        endings: "破局结局、交易结局、继任结局、温情结局",
+        tags: ["现实", "奇幻", "女性向"],
+        filters: ["全部", "现实", "悬疑", "女性向"],
+        accent: "#c89fdd",
+        highlights: ["签协议救父亲", "帮助室友逃离公寓", "公开真相让老人衰老"]
+      },
+      {
+        id: "two-city",
+        title: "双城通缉令",
+        type: "近未来犯罪 / 双主角互动 / 城市逃亡",
+        logline: "玩家同时扮演被 AI 城市系统误判的嫌疑人，和负责追捕他的女警。",
+        premise: "城市 AI 把外卖骑手顾骁锁定为爆炸案嫌疑人，所有摄像头和支付系统都在追捕他；另一边，调查员程雾必须根据系统证据抓人。",
+        player: "外卖骑手顾骁与调查员程雾",
+        hook: "一个视角里的自救，可能会变成另一个视角里的罪证。",
+        mechanism: "双视角因果、算法怀疑度、人类信任度、城市资源",
+        appeal: "适合喜欢双主角、逃亡和近未来犯罪的玩家。你会一边制造破绽逃生，一边又用另一个身份追查这些破绽。",
+        endings: "双主角合作、顾骁逃亡、程雾升职、算法接管",
+        tags: ["近未来", "犯罪", "双主角"],
+        filters: ["全部", "悬疑", "近未来"],
+        accent: "#55a7e8",
+        highlights: ["逃亡时救暴露自己的路人", "提交不完整的有利证据", "让 AI 系统公开自证错误"]
+      },
+      {
+        id: "empress",
+        title: "退婚当天我登基了",
+        type: "古装权谋 / 女性成长 / 轻爽剧",
+        logline: "被退婚的贵女在家族崩塌当天进入朝局，最终可能成为女帝、权臣或被史书抹去的人。",
+        premise: "退婚、抄家、父亲入狱同一天发生。玩家从闺阁贵女被推入宫宴、刑部、边军和宗庙，在翻案与夺权之间选择自己的名声。",
+        player: "世家贵女谢明棠",
+        hook: "用短剧爽感包装严肃权谋，爱情只是政治变量。",
+        mechanism: "名声路线、势力关系、家族存亡、情感路线",
+        appeal: "适合喜欢古装权谋和女性成长的玩家。你不是等人拯救的女主，而是亲手决定嫁、杀、救、骗、登基的人。",
+        endings: "女帝结局、权臣结局、归隐结局、妖后结局",
+        tags: ["女性向", "古装", "权谋"],
+        filters: ["全部", "女性向", "悬疑"],
+        accent: "#e7c66b",
+        highlights: ["当众撕毁婚书", "嫁给敌人进入权力核心", "政变中杀掉曾经爱过的人"]
+      },
+      {
+        id: "top-donor",
+        title: "消失的榜一",
+        type: "直播行业 / 情感悬疑 / 反转犯罪",
+        logline: "女主播的神秘榜一突然失踪，她以为卷入诈骗案，却发现榜一可能一直在替她坐牢。",
+        premise: "榜一深海消失后，警方、MCN、公会粉丝和竞争主播都开始逼玩家表态。你要在直播营业中追查打赏、洗钱和旧案真相。",
+        player: "腰部女主播姜晚",
+        hook: "直播间里的爱、钱和身份全是可疑的。",
+        mechanism: "直播人设值、粉丝关系、合同束缚、真心值",
+        appeal: "适合喜欢直播行业内幕和情感犯罪反转的玩家。它的悬念是：榜一到底是金主、恋人、罪犯，还是公司制造的幻象？",
+        endings: "救赎结局、上岸结局、顶流结局、虚假结局",
+        tags: ["直播", "情感", "犯罪"],
+        filters: ["全部", "现实", "悬疑", "女性向", "低成本"],
+        accent: "#ef6f98",
+        highlights: ["直播承认问题打赏", "与竞争主播合作曝光 MCN", "用热度逼警方重查旧案"]
+      },
+      {
+        id: "restart-1999",
+        title: "重启 1999",
+        type: "年代悬疑 / 家庭情感 / 时间循环",
+        logline: "纪录片导演回到父母离婚前一天，必须查清家庭崩塌背后的真实罪案。",
+        premise: "成年人意识回到 7 岁身体，只能靠偷听、撒谎、藏证据和求助大人推动剧情。每次循环都会揭开父母离婚、小舅失踪和旧录像带的真相。",
+        player: "成年人意识回到童年的钟意",
+        hook: "不是单纯改变过去，而是理解父母为什么变成后来那样。",
+        mechanism: "循环记忆、父母关系值、童年信任值、旧案拼图",
+        appeal: "适合喜欢家庭情感、年代悬疑和时间循环的玩家。它不是单纯爽改命，而是让玩家在修复家庭和接受真相之间做选择。",
+        endings: "家庭修复、真相结局、代价结局、接受结局",
+        tags: ["年代", "家庭", "悬疑"],
+        filters: ["全部", "现实", "悬疑"],
+        accent: "#d9a36b",
+        highlights: ["告诉母亲未来她会病死", "阻止父亲见神秘女人", "为了救小舅牺牲父母复合"]
+      }
+    ];
+
+    const maxPicks = 3;
+    const cardsEl = document.querySelector("#cards");
+    const countEl = document.querySelector("#pickCount");
+    const resultTitleEl = document.querySelector("#resultTitle");
+    const resultTextEl = document.querySelector("#resultText");
+    const toastEl = document.querySelector("#toast");
+    const dialog = document.querySelector("#detailDialog");
+    const modalTitle = document.querySelector("#modalTitle");
+    const modalPitch = document.querySelector("#modalPitch");
+    const modalHook = document.querySelector("#modalHook");
+    const modalList = document.querySelector("#modalList");
+    const saved = JSON.parse(localStorage.getItem("interactiveFilmPicks") || "[]");
+    const selected = new Set(saved.filter((id) => stories.some((story) => story.id === id)));
+    let activeFilter = "全部";
+
+    function renderCards() {
+      cardsEl.innerHTML = "";
+      const visibleStories = stories.filter((story) => story.filters.includes(activeFilter));
+
+      visibleStories.forEach((story, index) => {
+        const card = document.createElement("article");
+        card.className = `card${selected.has(story.id) ? " selected" : ""}`;
+        card.style.setProperty("--accent", story.accent);
+        card.innerHTML = `
+          <div class="card-main">
+            <div class="meta">
+              <span class="tag">No.${stories.indexOf(story) + 1}</span>
+              ${story.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
+            </div>
+            <h3>《${story.title}》</h3>
+            <p class="logline">${story.logline}</p>
+            <p class="premise">${story.premise}</p>
+            <div class="details">
+              <div class="detail"><b>类型</b><span>${story.type}</span></div>
+              <div class="detail"><b>玩家</b><span>${story.player}</span></div>
+              <div class="detail"><b>机制</b><span>${story.mechanism}</span></div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="vote-btn" type="button">${selected.has(story.id) ? "已选中" : "选这个"}</button>
+            <button class="more-btn" type="button" aria-label="查看《${story.title}》详情">?</button>
+          </div>
+        `;
+
+        card.querySelector(".vote-btn").addEventListener("click", () => toggleStory(story.id));
+        card.querySelector(".more-btn").addEventListener("click", () => showDetail(story));
+        cardsEl.appendChild(card);
+
+        if (index === 0) {
+          card.setAttribute("tabindex", "-1");
+        }
+      });
+    }
+
+    function updateResult() {
+      const picks = stories.filter((story) => selected.has(story.id));
+      countEl.textContent = picks.length;
+      localStorage.setItem("interactiveFilmPicks", JSON.stringify(picks.map((story) => story.id)));
+
+      if (!picks.length) {
+        resultTitleEl.textContent = "还没选剧本";
+        resultTextEl.textContent = "点选你最想玩的方向，系统会自动生成一段可复制的回复。";
+        return;
+      }
+
+      resultTitleEl.textContent = `你选了 ${picks.length} 个方向`;
+      resultTextEl.textContent = buildShareText();
+    }
+
+    function buildShareText() {
+      const picks = stories.filter((story) => selected.has(story.id));
+      if (!picks.length) {
+        return "我还没选，先看完再投。";
+      }
+
+      const names = picks.map((story) => `《${story.title}》`).join("、");
+      const reason = picks.length === 1
+        ? picks[0].hook
+        : "这几个最有真人互动影游的代入感和讨论度。";
+      return `我最想玩：${names}。理由：${reason}`;
+    }
+
+    function toggleStory(id) {
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else if (selected.size < maxPicks) {
+        selected.add(id);
+      } else {
+        showToast("最多选 3 个，可以先取消一个");
+        return;
+      }
+
+      renderCards();
+      updateResult();
+    }
+
+    function showDetail(story) {
+      modalTitle.textContent = `《${story.title}》`;
+      modalPitch.textContent = story.logline;
+      modalHook.innerHTML = `
+        <span class="modal-section">开局处境</span><br>${story.premise}<br>
+        <span class="modal-section">为什么好玩</span><br>${story.appeal}<br>
+        <span class="modal-section">核心钩子</span><br>${story.hook}
+      `;
+      modalList.innerHTML = story.highlights.map((item) => `<li>${item}</li>`).join("");
+      dialog.showModal();
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toastEl.classList.remove("show"), 1800);
+    }
+
+    document.querySelector("#closeDialog").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) {
+        dialog.close();
+      }
+    });
+
+    document.querySelector("#copyBtn").addEventListener("click", async () => {
+      const text = buildShareText();
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("已复制，可以发评论了");
+      } catch (error) {
+        showToast(text);
+      }
+    });
+
+    document.querySelector("#clearBtn").addEventListener("click", () => {
+      selected.clear();
+      renderCards();
+      updateResult();
+      showToast("已清空选择");
+    });
+
+    document.querySelector("#randomPick").addEventListener("click", () => {
+      const story = stories[Math.floor(Math.random() * stories.length)];
+      selected.clear();
+      selected.add(story.id);
+      activeFilter = "全部";
+      document.querySelectorAll(".chip").forEach((chip) => {
+        chip.classList.toggle("active", chip.dataset.filter === "全部");
+      });
+      renderCards();
+      updateResult();
+      document.querySelector("#vote").scrollIntoView({ behavior: "smooth" });
+      showToast(`随机选中《${story.title}》`);
+    });
+
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        activeFilter = chip.dataset.filter;
+        document.querySelectorAll(".chip").forEach((item) => item.classList.remove("active"));
+        chip.classList.add("active");
+        renderCards();
+      });
+    });
+
+    renderCards();
+    updateResult();
+  </script>
+</body>
+</html>
